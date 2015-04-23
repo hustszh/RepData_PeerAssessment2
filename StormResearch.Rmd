@@ -1,0 +1,25 @@
+---
+title: "Impact of Severe Weather Events on Public Health and Economic in the United States"
+author: "zhaohe su"
+date: "Friday, April 24, 2015"
+output: html_document
+---
+
+#Synopsis  
+Storms and other severe weather events can cause both public health and economic problems for communities and municipalities. Many severe events can result in fatalities, injuries, and property damage, and preventing such outcomes to the extent possible is a key concern.  
+This is a reproducible research document to explore the U.S. National Oceanic and Atmospheric Administration's (NOAA) Storm Database to try to find out the impact of severe weather events on public health and economic in the United States.  
+The events in the database start in the year 1950 and end in November 2011. In the earlier years of the database there are generally fewer events recorded, most likely due to a lack of good records. More recent years should be considered more complete.  
+
+#Data Processing  
+```{r}
+summary(cars)
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+#Results  
+results
