@@ -1,6 +1,7 @@
 ---
-title: "Impact of Severe Weather Events on Public Health and Economic in the United States"
-author: "zhaohe su"
+title: Impact Analysis of Severe Weather Events on Public Health and Economic in the
+  United States
+author: "Zhaohe Su"
 date: "Friday, April 24, 2015"
 output: html_document
 ---
@@ -9,17 +10,123 @@ output: html_document
 Storms and other severe weather events can cause both public health and economic problems for communities and municipalities. Many severe events can result in fatalities, injuries, and property damage, and preventing such outcomes to the extent possible is a key concern.  
 This is a reproducible research document to explore the U.S. National Oceanic and Atmospheric Administration's (NOAA) Storm Database to try to find out the impact of severe weather events on public health and economic in the United States.  
 The events in the database start in the year 1950 and end in November 2011. In the earlier years of the database there are generally fewer events recorded, most likely due to a lack of good records. More recent years should be considered more complete.  
+The data analysis addresses the following questions:
+1. Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
+2. Across the United States, which types of events have the greatest economic consequences?
 
-#Data Processing  
-```{r}
-summary(cars)
+#Load Requied packages
+```{r, echo=TRUE, warning=FALSE}
+library(dplyr, quietly = TRUE)
 ```
 
-You can also embed plots, for example:
+#Data Processing  
+##Download and Read Data  
+```{r, echo=TRUE, cache=FALSE, warning=FALSE}
+if ( !file.exists("data")) {
+    dir.create("data")
+}
+if ( !file.exists("./data/StormData.csv.bz2")) {
+    url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+    download.file(url, "./data/StormData.csv.bz2")
+}
+if ( !( "stormData" %in% ls() ) ) {
+    stormData <- read.csv( bzfile("./data/StormData.csv.bz2"), sep="," )
+}
+dim(stormData)
+colnames(stormData)
+head(stormData, n=3)
+```
 
-```{r, echo=FALSE}
-plot(cars)
+##Subset and Clean Data
+We choose the following columns to do the analysis:  
+- EVTYPE: the type of event  
+- FATALITIES: number of fatalities  
+- INJURIES: number of injuries  
+- PROPDMG: damage to properties in USD  
+- PROPDMGEXP: magnitude for properties damage (K for thousands, M for millions, B for billions)  
+- CROPDMG: damage to crops in USD  
+- CROPDMGEXP: magnitude for crops damage (K for thousands, M for millions, B for billions)  
+```{r, echo=TRUE}
+subStormData <- stormData %>%
+                select( EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP )
+```
+
+The valid values in magnitude fields are: ""(empty for one), K(for thousands), M(for millions) and B(for billions). So we clean the data where the magnitude fields contain invalid value, convert the invalid value to 1, which means that it has a magnitude of 1( 10 to the power 0 ).
+```{r, echo=TRUE}
+subStormData$PROPDMGEXP <- ifelse( subStormData$PROPDMGEXP %in% c( "H", "K", "M", "B", "h", "k", "m", "b"),
+                                   as.character(subStormData$PROPDMGEXP),
+                                   "1" )
+subStormData$PROPDMGEXP <- sub("^H$", "100", subStormData$PROPDMGEXP, ignore.case=TRUE )
+subStormData$PROPDMGEXP <- sub("^K$", "1000", subStormData$PROPDMGEXP, ignore.case=TRUE )
+subStormData$PROPDMGEXP <- sub("^M$", "1000000", subStormData$PROPDMGEXP, ignore.case=TRUE )
+subStormData$PROPDMGEXP <- sub("^B$", "1000000000", subStormData$PROPDMGEXP, ignore.case=TRUE )
+
+subStormData$CROPDMGEXP <- ifelse( subStormData$CROPDMGEXP %in% c( "H", "K", "M", "B", "h", "k", "m", "b"),
+                                   as.character(subStormData$CROPDMGEXP),
+                                   "1" )
+subStormData$CROPDMGEXP <- sub("^H$", "100", subStormData$CROPDMGEXP, ignore.case=TRUE )
+subStormData$CROPDMGEXP <- sub("^K$", "1000", subStormData$CROPDMGEXP, ignore.case=TRUE )
+subStormData$CROPDMGEXP <- sub("^M$", "1000000", subStormData$CROPDMGEXP, ignore.case=TRUE )
+subStormData$CROPDMGEXP <- sub("^B$", "1000000000", subStormData$CROPDMGEXP, ignore.case=TRUE )
+
 ```
 
 #Results  
-results
+## Top 10 Events causing the most fatalities
+```{r, echo=TRUE}
+subStormData$FATALITIES <- as.numeric(subStormData$FATALITIES)
+mostFatalities <- subStormData %>%
+                  select( EVTYPE, FATALITIES ) %>%
+                  filter( FATALITIES > 0 ) %>%
+                  group_by( EVTYPE ) %>%
+                  summarise( TOTAL_FATALITIES = sum(FATALITIES) ) %>%
+                  arrange( desc(TOTAL_FATALITIES) ) %>%
+                  head(10)
+mostFatalities
+barplot(mostFatalities$TOTAL_FATALITIES/100000000, 
+        names.arg=mostFatalities$EVTYPE,
+        ylab="Fatalities( x 100000000 times )",
+        ylim=c(0,40),
+        las=3,
+        main="Top 10 Events causing the most fatalities")
+```
+
+## Top 10 Events causing the most injuries
+```{r, echo=TRUE}
+subStormData$INJURIES <- as.numeric(subStormData$INJURIES)
+mostInjuries <- subStormData %>%
+                  select( EVTYPE, INJURIES ) %>%
+                  filter( INJURIES > 0 ) %>%
+                  group_by( EVTYPE ) %>%
+                  summarise( TOTAL_INJURIES = sum(INJURIES) ) %>%
+                  arrange( desc(TOTAL_INJURIES) ) %>%
+                  head(10)
+mostInjuries
+barplot(mostInjuries$TOTAL_INJURIES/1000000000, 
+        names.arg=mostInjuries$EVTYPE,
+        ylab="Injuries( x 100000000 times )",
+        ylim=c(0,4),
+        las=3,
+        main="Top 10 Events causing the most injuries")
+```
+
+## Top 10 Events having the greatest economic consequences
+```{r, echo=TRUE}
+subStormData$PROPDMG <- as.numeric(subStormData$PROPDMG)
+subStormData$PROPDMGEXP <- as.numeric(subStormData$PROPDMGEXP)
+subStormData$CROPDMG <- as.numeric(subStormData$CROPDMG)
+subStormData$CROPDMGEXP <- as.numeric(subStormData$CROPDMGEXP)
+mostProperties <- subStormData %>%
+                  select( EVTYPE, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP ) %>%
+                  group_by( EVTYPE ) %>%
+                  summarise( TOTAL_PROPERTIES = sum( PROPDMG * PROPDMGEXP + CROPDMG * CROPDMGEXP ) ) %>%
+                  arrange( desc(TOTAL_PROPERTIES) ) %>%
+                  head(10)
+mostProperties
+barplot(mostProperties$TOTAL_PROPERTIES/1000000000, 
+        names.arg=mostProperties$EVTYPE,
+        ylim=c(0,100000),
+        las=3,
+        ylab="Economic Damage in Billions of USD",
+        main="Top 10 Events having the greatest economic consequences")
+```

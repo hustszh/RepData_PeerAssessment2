@@ -1,2 +1,11 @@
+#R history
+.Rhistory
+
+#R project history
 /.Rproj.user/
+
+#data
 /data/
+
+#cache
+/StormResearch_cache/
